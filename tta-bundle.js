@@ -2,13 +2,348 @@
 (function () {
 
 (function () {
+if (window.__ttaSlardarInitialized) return;
+window.__ttaSlardarInitialized = true;
+
+;(function (w, d, u, b, n, pc, ga, ae, po, s, p, e, t, pp) {
+pc = "precollect";
+ga = "getAttribute";
+ae = "addEventListener";
+po = "PerformanceObserver";
+s = function (m) {
+p = [].slice.call(arguments);
+p.push(Date.now(), location.href);
+(m == pc ? s.p.a : s.q).push(p);
+};
+s.q = [];
+s.p = { a: [] };
+w[n] = s;
+e = document.createElement("script");
+e.src = u + "?bid=" + b + "&globalName=" + n;
+e.crossOrigin = u.indexOf("sdk-web") > 0 ? "anonymous" : "use-credentials";
+d.getElementsByTagName("head")[0].appendChild(e);
+if (ae in w) {
+s.pcErr = function (e) {
+e = e || w.event;
+t = e.target || e.srcElement;
+if (t instanceof Element || t instanceof HTMLElement) {
+if (t[ga]("integrity")) {
+w[n](pc, "sri", t[ga]("href") || t[ga]("src"));
+} else {
+w[n](pc, "st", { tagName: t.tagName, url: t[ga]("href") || t[ga]("src") });
+}
+} else {
+w[n](pc, "err", e.error);
+}
+};
+s.pcRej = function (e) {
+e = e || w.event;
+w[n](pc, "reject", e.reason || (e.detail && e.detail.reason));
+};
+w[ae]("error", s.pcErr, true);
+w[ae]("unhandledrejection", s.pcRej, true);
+}
+if ("PerformanceLongTaskTiming" in w) {
+pp = s.pp = { entries: [] };
+pp.observer = new PerformanceObserver(function (l) {
+pp.entries = pp.entries.concat(l.getEntries());
+});
+pp.observer.observe({ entryTypes: ["longtask"] });
+}
+})(
+window,
+document,
+"https://sf16-short-sg.bytedapm.com/slardar/fe/sdk-web/browser.sg.js",
+"TiktokAcademy",
+"Slardar"
+);
+
+window.Slardar("init", {
+bid: "TiktokAcademy",
+});
+
+function getSlardarCommonContext() {
+var user = window.IntellumDataLayer &&
+window.IntellumDataLayer.user;
+var email = user && (user.email || user.code);
+var userId = user && (user.id || email);
+var advid = user && user.custom_u;
+var context = {
+page_path: window.location.pathname,
+is_bind_modal_rollout: isInBindModalRollout(),
+};
+
+if (userId) context.user_id = String(userId);
+if (email) context.email = String(email);
+if (advid) context.advid = String(advid);
+
+return context;
+}
+
+function getCookie(name) {
+var parts = document.cookie ? document.cookie.split("; ") : [];
+var prefix = encodeURIComponent(name) + "=";
+
+for (var i = 0; i < parts.length; i++) {
+if (parts[i].indexOf(prefix) === 0) {
+return decodeURIComponent(parts[i].slice(prefix.length));
+}
+}
+
+return null;
+}
+
+function setCookie(name, value) {
+var cookie = encodeURIComponent(name) + "=" + encodeURIComponent(value) +
+"; Max-Age=31536000; Path=/; SameSite=Lax";
+
+if (window.location.protocol === "https:") cookie += "; Secure";
+document.cookie = cookie;
+}
+
+function getBindModalRolloutValue() {
+var value = getCookie("tta_post_login_profile_modal_rollout");
+var numberValue = value === null ? NaN : Number(value);
+
+if (!(numberValue >= 0 && numberValue < 1)) {
+numberValue = Math.random();
+setCookie("tta_post_login_profile_modal_rollout", String(numberValue));
+}
+
+return numberValue;
+}
+
+function isInBindModalRollout() {
+return getBindModalRolloutValue() < 1;
+}
+
+function startSlardar() {
+if (window.__ttaSlardarStarted) return;
+window.__ttaSlardarStarted = true;
+window.Slardar("context.merge", getSlardarCommonContext());
+window.Slardar("start");
+}
+
+function waitUserAndStartSlardar() {
+var attempts = 0;
+var maxAttempts = 40;
+var timer = setInterval(function () {
+var user = window.IntellumDataLayer &&
+window.IntellumDataLayer.user;
+
+attempts++;
+if (user || attempts >= maxAttempts) {
+clearInterval(timer);
+startSlardar();
+}
+}, 250);
+}
+
+waitUserAndStartSlardar();
+})();
+
+})();
+
+// ---- extracted script block 2 ----
+(function () {
+
+(function () {
 window._ttaLoaderDismiss = function () { };
 window._ttaLoaderGated = false;
 })();
 
 })();
 
-// ---- extracted script block 2 ----
+// ---- extracted script block 3 ----
+(function () {
+
+(function () {
+var TARGET_URL = "https://api-static-2.feathery.io/api/custom_request/";
+if (window.__ttaFeatheryFetchLoggerInstalled || typeof window.fetch !== "function") return;
+
+window.__ttaFeatheryFetchLoggerInstalled = true;
+
+var originalFetch = window.fetch;
+window.fetch = function (input, init) {
+var url = "";
+
+if (typeof input === "string") {
+url = input;
+} else if (input && typeof input.url === "string") {
+url = input.url;
+} else if (input && typeof input.toString === "function") {
+url = input.toString();
+}
+
+var shouldLog = url.indexOf(TARGET_URL) === 0;
+
+if (shouldLog) {
+console.log("[TTA] Feathery custom request fetch:", {
+url: url,
+input: input,
+init: init,
+});
+}
+
+var fetchPromise = originalFetch.apply(this, arguments);
+
+if (shouldLog) {
+fetchPromise
+.then(function (response) {
+var clonedResponse = response.clone();
+return clonedResponse.json()
+.catch(function () {
+return clonedResponse.text();
+})
+.then(function (data) {
+console.log("[TTA] Feathery custom request response data:", {
+url: url,
+status: response.status,
+ok: response.ok,
+data: data,
+});
+
+var advertiserIds =
+data &&
+data.data &&
+data.data.data &&
+data.data.data.advertiser_ids;
+
+if (Array.isArray(advertiserIds) && advertiserIds.length === 0) {
+console.log("[TTA] Feathery custom request returned empty advertiser_ids:", {
+url: url,
+requestId: data.data.request_id,
+});
+
+if (typeof window.__ttaTriggerCloseBindSurvey === "function") {
+window.__ttaTriggerCloseBindSurvey();
+} else {
+window.__ttaPendingCloseBindSurvey = true;
+}
+}
+});
+})
+.catch(function (error) {
+console.log("[TTA] Feathery custom request fetch failed:", {
+url: url,
+error: error,
+});
+});
+}
+
+return fetchPromise;
+};
+})();
+
+})();
+
+// ---- extracted script block 4 ----
+(function () {
+
+(function () {
+var FEELGOOD_SDK_URL = "https://lf16-ttmp.tiktokstaticb.com/obj/unpkg-va/byted-feelgood/deliverer/0.4.11/dist/js/umd/index.js";
+var FEELGOOD_PLATFORM_ID = "7234870945951875074";
+var FEELGOOD_HOST = "web-sg.tiktok.com";
+var FEELGOOD_TOKEN_URL = "https://web-sg.tiktok.com/survey/api/feelgood/v1/token";
+var FEELGOOD_SECRET_KEY = "80375dda708820f3ff5fcbb7d99d22d4";
+
+if (window.__ttaFeelgoodInitialized) return;
+window.__ttaFeelgoodInitialized = true;
+
+function getFeelgoodLanguage() {
+var raw = new URLSearchParams(window.location.search).get("locale") ||
+document.documentElement.lang ||
+navigator.language ||
+"en";
+return String(raw).toLowerCase().split("-")[0] || "en";
+}
+
+function getFeelgoodSign() {
+var user = window.IntellumDataLayer &&
+window.IntellumDataLayer.user;
+var email = user && (user.email || user.code);
+var userId = user && (user.id || email);
+
+if (!userId && !email) return null;
+
+var sign = {};
+if (userId) sign.userId = String(userId);
+if (email) sign.email = String(email);
+if (userId && email) sign.tta_userId_and_email = String(userId) + "_" + String(email);
+return sign;
+}
+
+function getFeelgoodAuthToken() {
+return fetch(FEELGOOD_TOKEN_URL, {
+method: "POST",
+mode: "cors",
+headers: {
+"Content-Type": "application/json",
+},
+body: JSON.stringify({
+platformID: FEELGOOD_PLATFORM_ID,
+secretKey: FEELGOOD_SECRET_KEY,
+}),
+})
+.then(function (response) {
+return response.json();
+})
+.then(function (res) {
+if (res && res.data) return res.data;
+throw new Error("[TTA] Feelgood token response missing data");
+});
+}
+
+function initFeelgood() {
+var sdk = window["@byted-feelgood/deliverer"];
+var feelgood = sdk && sdk.feelgood;
+var Feelgood = sdk && sdk.default;
+var sign = getFeelgoodSign();
+var params = {
+platformID: FEELGOOD_PLATFORM_ID,
+host: FEELGOOD_HOST,
+language: getFeelgoodLanguage(),
+getAuthToken: getFeelgoodAuthToken,
+};
+
+if (sign) params.sign = sign;
+
+if (typeof feelgood === "function") {
+window.__ttaFeelgoodInstance = feelgood(params);
+return;
+}
+
+if (typeof Feelgood === "function") {
+window.__ttaFeelgoodInstance = new Feelgood(params);
+return;
+}
+
+console.warn("[TTA] Feelgood SDK loaded but no initializer was found.");
+}
+
+function loadFeelgood() {
+if (window["@byted-feelgood/deliverer"]) {
+initFeelgood();
+return;
+}
+
+var script = document.createElement("script");
+script.src = FEELGOOD_SDK_URL;
+script.async = true;
+script.onload = initFeelgood;
+script.onerror = function () {
+console.warn("[TTA] Failed to load Feelgood SDK:", FEELGOOD_SDK_URL);
+};
+
+(document.head || document.documentElement).appendChild(script);
+}
+
+loadFeelgood();
+})();
+
+})();
+
+// ---- extracted script block 5 ----
 (function () {
 
 (function () {
@@ -47,7 +382,7 @@ if (window._ttaLoaderDismiss) window._ttaLoaderDismiss();
 
 })();
 
-// ---- extracted script block 3 ----
+// ---- extracted script block 6 ----
 (function () {
 
 (function () {
@@ -95,7 +430,7 @@ if (bar && header) positionTtaStickyBar(bar, header);
 
 })();
 
-// ---- extracted script block 4 ----
+// ---- extracted script block 7 ----
 (function () {
 
 (function () {
@@ -128,7 +463,7 @@ if (window._ttaLoaderDismiss) window._ttaLoaderDismiss();
 
 })();
 
-// ---- extracted script block 5 ----
+// ---- extracted script block 8 ----
 (function () {
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -427,7 +762,7 @@ fetchAndRenderContinueLearning();
 
 })();
 
-// ---- extracted script block 6 ----
+// ---- extracted script block 9 ----
 (function () {
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -820,7 +1155,7 @@ tagsObserver.observe(document.body, { childList: true, subtree: true });
 const COURSE_FILTERS = [
 { key: "all", label: "All Courses" },
 { key: "media_buying", label: "Media Buying Path" },
-{ key: "creative", label: "Creative Expert" },
+{ key: "creative", label: "Creative Expert Path" },
 ];
 
 let activeCourseFilter = "all";
@@ -903,7 +1238,7 @@ headersObserver.observe(document.body, { childList: true, subtree: true });
 
 })();
 
-// ---- extracted script block 7 ----
+// ---- extracted script block 10 ----
 (function () {
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -968,7 +1303,7 @@ ctaObserver.observe(document.body, { childList: true, subtree: true });
 
 })();
 
-// ---- extracted script block 8 ----
+// ---- extracted script block 11 ----
 (function () {
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -1034,7 +1369,7 @@ ctaObserver.observe(document.body, { childList: true, subtree: true });
 
 })();
 
-// ---- extracted script block 9 ----
+// ---- extracted script block 12 ----
 (function () {
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -1637,7 +1972,7 @@ btn.classList.remove("active"),
 
 })();
 
-// ---- extracted script block 10 ----
+// ---- extracted script block 13 ----
 (function () {
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -1673,7 +2008,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 
 })();
 
-// ---- extracted script block 11 ----
+// ---- extracted script block 14 ----
 (function () {
 
 (function () {
@@ -1869,7 +2204,7 @@ init();
 
 })();
 
-// ---- extracted script block 12 ----
+// ---- extracted script block 15 ----
 (function () {
 
 (function () {
@@ -2435,7 +2770,7 @@ init();
 
 })();
 
-// ---- extracted script block 13 ----
+// ---- extracted script block 16 ----
 (function () {
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -2469,7 +2804,7 @@ setTimeout(tryClick, 800);
 
 })();
 
-// ---- extracted script block 14 ----
+// ---- extracted script block 17 ----
 (function () {
 
 (function () {
@@ -2490,7 +2825,430 @@ document.addEventListener("DOMContentLoaded", checkLoginState);
 
 })();
 
-// ---- extracted script block 15 ----
+// ---- extracted script block 18 ----
+(function () {
+
+(function () {
+var SHOWN_KEY = "tta_post_login_profile_modal_shown";
+var ROLLOUT_COOKIE_NAME = "tta_post_login_profile_modal_rollout";
+var ROLLOUT_RATIO = 0.2; // 20% rollout
+var TTA_LOGO_URL = "data:image/png;base64,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";
+var BIND_ADV_ID_URL = "https://business-api.tiktok.com/portal/auth?app_id=7379247328747585552&state=your_custom_params&redirect_uri=https%3A%2F%2Fwww.tiktokacademy.com%2Fprofiles%2Fedit";
+var CLOSE_BIND_TRIGGER_KEY = "tta_close_bind_event";
+var MODAL_COPY = {
+en: {
+title: "Customize your TikTok Academy experience",
+body: "Connect your ad account to get educational content tailored to your business goals.",
+primary: "Connect or create an account",
+secondary: "Not now",
+},
+id: {
+title: "Kustomisasi pengalaman TikTok Academy Anda",
+body: "Hubungkan akun iklan Anda untuk mendapatkan konten edukasi yang disesuaikan dengan tujuan bisnis Anda.",
+primary: "Hubungkan atau buat akun",
+secondary: "Nanti",
+},
+de: {
+title: "TikTok Academy, in deinem Stil",
+body: "Verknüpfe dein Anzeigenkonto, um Lerninhalte speziell für deine Geschäftsziele zu erhalten.",
+primary: "Konto verknüpfen oder erstellen",
+secondary: "Später",
+},
+es: {
+title: "Personaliza tu experiencia con la Academia de TikTok",
+body: "Conecta tu cuenta publicitaria para obtener contenido educativo adaptado a tus objetivos empresariales.",
+primary: "Conecta o crea una cuenta",
+secondary: "Ahora no",
+},
+"es-la": {
+title: "Personaliza tu experiencia en TikTok Academy",
+body: "Conecta tu cuenta publicitaria para obtener contenido educativo adaptado a tus objetivos empresariales.",
+primary: "Conecta o crea una cuenta",
+secondary: "Ahora no",
+},
+fr: {
+title: "Personnalisez votre expérience avec la TikTok Academy",
+body: "Connectez votre compte publicitaire pour obtenir du contenu éducatif adapté à vos objectifs commerciaux.",
+primary: "Connecter ou créer un compte",
+secondary: "Pas maintenant",
+},
+it: {
+title: "Personalizza la tua esperienza nella TikTok Academy",
+body: "Collega il tuo account pubblicitario per ottenere contenuti formativi a misura dei tuoi obiettivi aziendali.",
+primary: "Collega o crea un account",
+secondary: "Non ora",
+},
+"pt-br": {
+title: "Personalizar sua experiência na TikTok Academy",
+body: "Conecte a sua conta de anúncios para ter acesso a conteúdos educativos adaptados às suas metas de negócios.",
+primary: "Conecte ou crie uma conta",
+secondary: "Agora não",
+},
+vi: {
+title: "Tùy chỉnh trải nghiệm Học viện TikTok của bạn",
+body: "Kết nối tài khoản quảng cáo để nhận nội dung giáo dục phù hợp với mục tiêu kinh doanh của bạn.",
+primary: "Kết nối hoặc tạo tài khoản",
+secondary: "Để sau",
+},
+tr: {
+title: "TikTok Academy deneyiminizi özelleştirin",
+body: "İşletme hedeflerinize uygun eğitim içerikleri almak için reklam hesabınızı bağlayın.",
+primary: "Bir hesap bağlayın veya oluşturun",
+secondary: "Şimdi değil",
+},
+ar: {
+title: "خصِّص تجربتك في TikTok Academy",
+body: "اربط حساب الإعلانات الخاص بك للحصول على محتوى تعليمي مُصمَّم خصيصًا لأهداف نشاطك التجاري.",
+primary: "ربط أو إنشاء حساب",
+secondary: "ليس الآن",
+},
+th: {
+title: "ปรับแต่งประสบการณ์การเรียนรู้ใน TikTok Academy ให้เหมาะกับคุณ",
+body: "เชื่อมต่อบัญชีโฆษณาของคุณเพื่อดูคอนเทนต์ให้ความรู้ที่คัดสรรมาให้เหมาะกับเป้าหมายทางธุรกิจที่คุณต้องการพิชิต",
+primary: "เชื่อมต่อหรือสร้างบัญชี",
+secondary: "ไม่ใช่ตอนนี้",
+},
+ja: {
+title: "TikTokアカデミーのカスタマイズ",
+body: "広告アカウントを連携することで、自分のビジネス目標に適した学習コンテンツを受け取れます。",
+primary: "アカウントを連携または作成",
+secondary: "後で",
+},
+"zh-hans": {
+title: "自定义 TikTok Academy 体验",
+body: "关联广告账号，获取为你的业务目标量身定制的课程内容。",
+primary: "关联或创建账号",
+secondary: "稍后再说",
+},
+"zh-hant-tw": {
+title: "自訂您的 TikTok 學院體驗",
+body: "連結您的廣告帳號，即可取得根據您業務目標量身打造的學習內容。",
+primary: "連結或建立帳號",
+secondary: "暫時不要",
+},
+ko: {
+title: "틱톡 아카데미를 맞춤 설정하세요",
+body: "광고 계정을 연결하고 비즈니스 목표에 맞는 교육 콘텐츠를 받아보세요.",
+primary: "계정 연결 또는 생성",
+secondary: "나중에",
+},
+};
+var pollCount = 0;
+var maxPollCount = 40;
+var pollId = null;
+var fallbackShown = false;
+
+function getUser() {
+return window.IntellumDataLayer &&
+window.IntellumDataLayer.user;
+}
+
+function storageGet(key) {
+try {
+return window.sessionStorage.getItem(key);
+} catch (_) {
+return fallbackShown ? "1" : null;
+}
+}
+
+function storageSet(key, value) {
+try {
+window.sessionStorage.setItem(key, value);
+} catch (_) {
+fallbackShown = value === "1";
+}
+}
+
+function getCookie(name) {
+var parts = document.cookie ? document.cookie.split("; ") : [];
+var prefix = encodeURIComponent(name) + "=";
+
+for (var i = 0; i < parts.length; i++) {
+if (parts[i].indexOf(prefix) === 0) {
+return decodeURIComponent(parts[i].slice(prefix.length));
+}
+}
+
+return null;
+}
+
+function setCookie(name, value) {
+var cookie = encodeURIComponent(name) + "=" + encodeURIComponent(value) +
+"; Max-Age=31536000; Path=/; SameSite=Lax";
+
+if (window.location.protocol === "https:") cookie += "; Secure";
+document.cookie = cookie;
+}
+
+function getRolloutValue() {
+var value = getCookie(ROLLOUT_COOKIE_NAME);
+var numberValue = value === null ? NaN : Number(value);
+
+if (!(numberValue >= 0 && numberValue < 1)) {
+numberValue = Math.random();
+setCookie(ROLLOUT_COOKIE_NAME, String(numberValue));
+}
+
+return numberValue;
+}
+
+function isInRollout() {
+return getRolloutValue() < ROLLOUT_RATIO;
+}
+
+function isLoggedIn() {
+return !!document.body && !document.body.classList.contains("body--logged-out");
+}
+
+function isUserEditPage() {
+return /^\/student\/users\/[^/]+\/edit\/?$/.test(window.location.pathname);
+}
+
+function hasEmptyCustomU() {
+var user = getUser();
+return !!user &&
+Object.prototype.hasOwnProperty.call(user, "custom_u") &&
+user.custom_u === "";
+}
+
+function getModalLocale() {
+var raw = new URLSearchParams(window.location.search).get("locale") ||
+document.documentElement.lang ||
+navigator.language ||
+"en";
+
+return String(raw).toLowerCase().replace(/_/g, "-").trim();
+}
+
+function getModalCopy() {
+var locale = getModalLocale();
+var shortLocale = locale.split("-")[0];
+
+if (MODAL_COPY[locale]) return MODAL_COPY[locale];
+if (locale.indexOf("zh-hant") === 0 || locale === "zh-tw" || locale === "zh-hk" || locale === "zh-mo") {
+return MODAL_COPY["zh-hant-tw"];
+}
+if (locale.indexOf("zh") === 0) return MODAL_COPY["zh-hans"];
+if (locale === "es-419") return MODAL_COPY["es-la"];
+if (locale.indexOf("pt") === 0) return MODAL_COPY["pt-br"];
+if (MODAL_COPY[shortLocale]) return MODAL_COPY[shortLocale];
+
+return MODAL_COPY.en;
+}
+
+function escapeHtml(value) {
+return String(value).replace(/[&<>"']/g, function (char) {
+return {
+"&": "&amp;",
+"<": "&lt;",
+">": "&gt;",
+'"': "&quot;",
+"'": "&#39;",
+}[char];
+});
+}
+
+function getCloseBindSurveySign() {
+var user = getUser();
+var email = user && (user.email || user.code);
+var userId = user && (user.id || email);
+var sign = {};
+
+if (userId) sign.userId = String(userId);
+if (email) sign.email = String(email);
+if (userId && email) sign.tta_userId_and_email = String(userId) + "_" + String(email);
+
+return Object.keys(sign).length ? sign : null;
+}
+
+function triggerCloseBindSurvey(attempt) {
+attempt = attempt || 0;
+var feelgoodInstance = window.__ttaFeelgoodInstance;
+var sign = getCloseBindSurveySign();
+var options = {};
+
+if (!feelgoodInstance || typeof feelgoodInstance.triggerEvent !== "function") {
+if (attempt < 20) {
+setTimeout(function () {
+triggerCloseBindSurvey(attempt + 1);
+}, 250);
+return;
+}
+console.warn("[TTA] Feelgood instance is not ready for close bind survey.");
+return;
+}
+
+if (sign) options.sign = sign;
+
+feelgoodInstance.triggerEvent(CLOSE_BIND_TRIGGER_KEY, options)
+.catch(function (error) {
+console.warn("[TTA] Failed to trigger close bind survey:", error);
+});
+}
+
+window.__ttaTriggerCloseBindSurvey = triggerCloseBindSurvey;
+if (window.__ttaPendingCloseBindSurvey) {
+window.__ttaPendingCloseBindSurvey = false;
+triggerCloseBindSurvey();
+}
+
+function injectStyle() {
+if (document.getElementById("tta-post-login-profile-modal-style")) return;
+
+var style = document.createElement("style");
+style.id = "tta-post-login-profile-modal-style";
+style.textContent =
+"#tta-post-login-profile-modal{position:fixed;inset:0;z-index:1000000;display:flex;align-items:center;justify-content:center;padding:14px 20px;box-sizing:border-box;}" +
+"#tta-post-login-profile-modal[hidden]{display:none;}" +
+".tta-post-login-profile-modal__backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(2px);}" +
+".tta-post-login-profile-modal__panel{position:relative;z-index:1;width:min(420px,100%);box-sizing:border-box;background:#fff;color:#0b0b0f;border:1px solid #d7d7dc;border-radius:10px;padding:30px 28px 26px;box-shadow:0 14px 40px rgba(0,0,0,.18);font-family:'TikTok Sans',Arial,sans-serif;text-align:center;}" +
+".tta-post-login-profile-modal__brand{display:block;margin:0 auto 18px;text-align:center;}" +
+".tta-post-login-profile-modal__brandlogo{display:block;width:min(132px,48vw);height:auto;margin:0 auto;}" +
+".tta-post-login-profile-modal__title{margin:0;color:#050505;font-size:18px;font-weight:800;line-height:1.25;letter-spacing:0;}" +
+".tta-post-login-profile-modal__copy{max-width:340px;margin:12px auto 0;color:#4a4a55;font-size:14px;font-weight:500;line-height:1.45;letter-spacing:0;}" +
+".tta-post-login-profile-modal__actions{display:flex;justify-content:center;gap:10px;margin-top:20px;}" +
+".tta-post-login-profile-modal__primary,.tta-post-login-profile-modal__secondary{appearance:none;max-width:100%;min-height:40px;border-radius:6px;font-size:14px;font-weight:800;line-height:1.2;letter-spacing:0;cursor:pointer;}" +
+".tta-post-login-profile-modal__primary{width:220px;}" +
+".tta-post-login-profile-modal__secondary{width:110px;}" +
+".tta-post-login-profile-modal__primary{border:0;background:#fe2c55;color:#fff;box-shadow:0 8px 16px rgba(254,44,85,.18);}" +
+".tta-post-login-profile-modal__primary:hover{background:#ef2952;}" +
+".tta-post-login-profile-modal__secondary{border:2px solid #b7b7c1;background:#fff;color:#050505;}" +
+".tta-post-login-profile-modal__secondary:hover{background:#f8f8fa;}" +
+".tta-post-login-profile-modal__close{position:absolute;top:10px;right:12px;width:28px;height:28px;border:0;background:transparent;color:#3f3f48;font-size:26px;font-weight:300;line-height:24px;cursor:pointer;}" +
+".tta-post-login-profile-modal__close:hover{color:#050505;}" +
+"@media(max-width:460px){#tta-post-login-profile-modal{padding:16px;}.tta-post-login-profile-modal__panel{padding:30px 20px 24px;border-radius:10px;}.tta-post-login-profile-modal__brand{margin-bottom:16px;}.tta-post-login-profile-modal__brandlogo{width:min(124px,46vw);}.tta-post-login-profile-modal__title{font-size:18px;}.tta-post-login-profile-modal__copy{font-size:14px;}.tta-post-login-profile-modal__copy br{display:none;}.tta-post-login-profile-modal__actions{flex-direction:column;gap:10px;margin-top:18px;}.tta-post-login-profile-modal__primary,.tta-post-login-profile-modal__secondary{width:100%;min-height:40px;font-size:14px;}.tta-post-login-profile-modal__close{top:10px;right:10px;width:28px;height:28px;font-size:26px;line-height:24px;}}";
+
+(document.head || document.documentElement).appendChild(style);
+}
+
+function showModal() {
+if (!document.body || document.getElementById("tta-post-login-profile-modal")) return;
+
+injectStyle();
+
+var modal = document.createElement("div");
+var copy = getModalCopy();
+modal.id = "tta-post-login-profile-modal";
+modal.innerHTML =
+'<div class="tta-post-login-profile-modal__backdrop"></div>' +
+'<div class="tta-post-login-profile-modal__panel" role="dialog" aria-modal="true" aria-labelledby="tta-post-login-profile-modal-title">' +
+'<button class="tta-post-login-profile-modal__close" type="button" aria-label="Close">&times;</button>' +
+'<div class="tta-post-login-profile-modal__brand"><img class="tta-post-login-profile-modal__brandlogo" src="' + TTA_LOGO_URL + '" alt="TikTok Academy" decoding="async"></div>' +
+'<h2 class="tta-post-login-profile-modal__title" id="tta-post-login-profile-modal-title">' + escapeHtml(copy.title) + "</h2>" +
+'<p class="tta-post-login-profile-modal__copy">' + escapeHtml(copy.body) + "</p>" +
+'<div class="tta-post-login-profile-modal__actions"><button class="tta-post-login-profile-modal__primary" type="button">' + escapeHtml(copy.primary) + '</button><button class="tta-post-login-profile-modal__secondary" type="button">' + escapeHtml(copy.secondary) + "</button></div>" +
+"</div>";
+
+var previousOverflow = document.body.style.overflow;
+var previousFocus = document.activeElement;
+
+function closeModal() {
+document.body.style.overflow = previousOverflow;
+document.removeEventListener("keydown", onKeyDown);
+if (modal.parentNode) modal.parentNode.removeChild(modal);
+if (previousFocus && typeof previousFocus.focus === "function") {
+try { previousFocus.focus(); } catch (_) {}
+}
+}
+
+function onKeyDown(e) {
+if (e.key === "Escape") closeModal();
+}
+
+function closeBindModalAction() {
+storageSet(SHOWN_KEY, "1");
+closeModal();
+triggerCloseBindSurvey();
+}
+
+function trackConnectAccountClick() {
+if (typeof window.Slardar !== "function") return;
+
+window.Slardar("sendEvent", {
+name: "ui_button_click",
+categories: {
+button_id: "connect_TT4B",
+page_path: window.location.pathname,
+},
+});
+}
+
+function trackCancelConnectClick() {
+if (typeof window.Slardar !== "function") return;
+
+window.Slardar("sendEvent", {
+name: "ui_button_click",
+categories: {
+button_id: "cancel_connect_tt4B",
+page_path: window.location.pathname,
+},
+});
+}
+
+function bindAdvId() {
+storageSet(SHOWN_KEY, "1");
+trackConnectAccountClick();
+window.open(BIND_ADV_ID_URL, "_blank", "noopener");
+closeModal();
+}
+
+function cancelConnect() {
+trackCancelConnectClick();
+closeBindModalAction();
+}
+
+modal.querySelector(".tta-post-login-profile-modal__close").addEventListener("click", cancelConnect);
+modal.querySelector(".tta-post-login-profile-modal__primary").addEventListener("click", bindAdvId);
+modal.querySelector(".tta-post-login-profile-modal__secondary").addEventListener("click", cancelConnect);
+
+document.body.appendChild(modal);
+document.body.style.overflow = "hidden";
+document.addEventListener("keydown", onKeyDown);
+modal.querySelector(".tta-post-login-profile-modal__primary").focus();
+}
+
+function shouldShowModal() {
+return !isUserEditPage() &&
+isLoggedIn() &&
+hasEmptyCustomU() &&
+storageGet(SHOWN_KEY) !== "1" &&
+isInRollout();
+}
+
+function checkAndShow() {
+if (shouldShowModal()) {
+showModal();
+if (pollId) clearInterval(pollId);
+return;
+}
+
+pollCount++;
+if (pollId && pollCount >= maxPollCount) clearInterval(pollId);
+}
+
+function init() {
+getRolloutValue();
+checkAndShow();
+pollId = setInterval(checkAndShow, 250);
+
+if (document.body) {
+new MutationObserver(checkAndShow).observe(document.body, {
+attributes: true,
+attributeFilter: ["class"],
+});
+}
+}
+
+if (document.readyState === "loading") {
+document.addEventListener("DOMContentLoaded", init);
+} else {
+init();
+}
+})();
+
+})();
+
+// ---- extracted script block 19 ----
 (function () {
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -2567,7 +3325,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 
 })();
 
-// ---- extracted script block 16 ----
+// ---- extracted script block 20 ----
 (function () {
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -2623,7 +3381,7 @@ footerText: "",
 path: "/student/activity/3611254-sign-up-for-tiktok-academy",
 classes: ["new_BBLove", "crimson_color"],
 useNativeContent: true,
-image: "https://i.ibb.co/GfSjFfDq/Group-2036083527-1.png",
+image: "https://cdn.jsdelivr.net/gh/mirza-wq/tiktok-academy-assets-git@main/sign-up-for-tiktok-academy-banner.png",
 imageWidth: 784,
 imageHeight: 766,
 tickIconPath:
@@ -2745,7 +3503,7 @@ applyClass();
 
 })();
 
-// ---- extracted script block 17 ----
+// ---- extracted script block 21 ----
 (function () {
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -2822,7 +3580,7 @@ groupCourseCards();
 
 })();
 
-// ---- extracted script block 18 ----
+// ---- extracted script block 22 ----
 (function () {
 
 (function () {
@@ -2905,7 +3663,7 @@ init();
 
 })();
 
-// ---- extracted script block 19 ----
+// ---- extracted script block 23 ----
 (function () {
 
 (function () {
@@ -3011,7 +3769,7 @@ init();
 
 })();
 
-// ---- extracted script block 20 ----
+// ---- extracted script block 24 ----
 (function () {
 
 (function () {
@@ -3065,7 +3823,7 @@ init();
 
 })();
 
-// ---- extracted script block 21 ----
+// ---- extracted script block 25 ----
 (function () {
 
 (function () {
@@ -3118,7 +3876,7 @@ init();
 
 })();
 
-// ---- extracted script block 22 ----
+// ---- extracted script block 26 ----
 (function () {
 
 (function () {
@@ -3173,7 +3931,7 @@ init();
 
 })();
 
-// ---- extracted script block 23 ----
+// ---- extracted script block 27 ----
 (function () {
 
 (function () {
@@ -3349,7 +4107,7 @@ init();
 
 })();
 
-// ---- extracted script block 24 ----
+// ---- extracted script block 28 ----
 (function () {
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -3394,7 +4152,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 
 })();
 
-// ---- extracted script block 25 ----
+// ---- extracted script block 29 ----
 (function () {
 
 (function () {
@@ -3485,7 +4243,7 @@ document.addEventListener("DOMContentLoaded", initFontUrlWatcher);
 
 })();
 
-// ---- extracted script block 26 ----
+// ---- extracted script block 30 ----
 (function () {
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -3598,7 +4356,7 @@ fixTruncatedDescriptions();
 
 })();
 
-// ---- extracted script block 27 ----
+// ---- extracted script block 31 ----
 (function () {
 
 (function () {
@@ -3634,7 +4392,7 @@ fixTitles();
 
 })();
 
-// ---- extracted script block 28 ----
+// ---- extracted script block 32 ----
 (function () {
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -3965,7 +4723,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 
 })();
 
-// ---- extracted script block 29 ----
+// ---- extracted script block 33 ----
 (function () {
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -4003,7 +4761,7 @@ document.body.appendChild(footer);
 
 })();
 
-// ---- extracted script block 30 ----
+// ---- extracted script block 34 ----
 (function () {
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -4038,7 +4796,7 @@ main.appendChild(customDiv);
 
 })();
 
-// ---- extracted script block 31 ----
+// ---- extracted script block 35 ----
 (function () {
 
 (function () {
@@ -4084,7 +4842,7 @@ if (runScript()) clearInterval(i);
 
 })();
 
-// ---- extracted script block 32 ----
+// ---- extracted script block 36 ----
 (function () {
 
 (function () {
@@ -4381,7 +5139,7 @@ document.addEventListener("DOMContentLoaded", start);
 
 })();
 
-// ---- extracted script block 33 ----
+// ---- extracted script block 37 ----
 (function () {
 
 (function () {
@@ -4421,7 +5179,7 @@ clearInterval(interval);
 
 })();
 
-// ---- extracted script block 34 ----
+// ---- extracted script block 38 ----
 (function () {
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -4469,7 +5227,7 @@ document.body.prepend(section);
 
 })();
 
-// ---- extracted script block 35 ----
+// ---- extracted script block 39 ----
 (function () {
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -4536,7 +5294,7 @@ console.log("Inserted replacement image after heading:", img);
 
 })();
 
-// ---- extracted script block 36 ----
+// ---- extracted script block 40 ----
 (function () {
 
 (function waitForText() {
@@ -4554,7 +5312,7 @@ setTimeout(waitForText, 300);
 
 })();
 
-// ---- extracted script block 37 ----
+// ---- extracted script block 41 ----
 (function () {
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -4570,7 +5328,7 @@ link.textContent = "My Webinars";
 
 })();
 
-// ---- extracted script block 38 ----
+// ---- extracted script block 42 ----
 (function () {
 
 (function () {
@@ -4623,7 +5381,7 @@ init();
 
 })();
 
-// ---- extracted script block 39 ----
+// ---- extracted script block 43 ----
 (function () {
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -4694,7 +5452,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 
 })();
 
-// ---- extracted script block 40 ----
+// ---- extracted script block 44 ----
 (function () {
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -4738,7 +5496,7 @@ ul.classList.add("testing");
 
 })();
 
-// ---- extracted script block 41 ----
+// ---- extracted script block 45 ----
 (function () {
 
 const BUTTONS = {
@@ -4814,7 +5572,7 @@ document.addEventListener("DOMContentLoaded", injectButtons);
 
 })();
 
-// ---- extracted script block 42 ----
+// ---- extracted script block 46 ----
 (function () {
 
 
@@ -4873,7 +5631,7 @@ mo.observe(document.body, { childList: true, subtree: true });
 
 })();
 
-// ---- extracted script block 43 ----
+// ---- extracted script block 47 ----
 (function () {
 
 // This site's own custom code (see fetchPathCourseCountViaIframe,
@@ -4944,7 +5702,7 @@ ttq.page();
 
 })();
 
-// ---- extracted script block 44 ----
+// ---- extracted script block 48 ----
 (function () {
 
 if (window.top === window.self) {
@@ -4956,7 +5714,7 @@ window._linkedin_data_partner_ids.push(_linkedin_partner_id);
 
 })();
 
-// ---- extracted script block 45 ----
+// ---- extracted script block 49 ----
 (function () {
 
 if (window.top === window.self) {
@@ -5539,7 +6297,7 @@ item.appendChild(summaryElement);
 
 })();
 
-// ---- extracted script block 46 ----
+// ---- extracted script block 50 ----
 (function () {
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -5667,7 +6425,7 @@ handleResponsive();
 
 })();
 
-// ---- extracted script block 47 ----
+// ---- extracted script block 51 ----
 (function () {
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -5694,7 +6452,7 @@ achievement.appendChild(achievement_svg);
 
 })();
 
-// ---- extracted script block 48 ----
+// ---- extracted script block 52 ----
 (function () {
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -5729,7 +6487,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 
 })();
 
-// ---- extracted script block 49 ----
+// ---- extracted script block 53 ----
 (function () {
 
 (function () {
@@ -6206,7 +6964,7 @@ mo.observe(document.body, { childList: true, subtree: true });
 
 })();
 
-// ---- extracted script block 50 ----
+// ---- extracted script block 54 ----
 (function () {
 
 (function () {
@@ -6299,7 +7057,7 @@ document.readyState === 'loading'
 
 })();
 
-// ---- extracted script block 51 ----
+// ---- extracted script block 55 ----
 (function () {
 
 (function () {
@@ -6711,7 +7469,7 @@ subtree: true,
 
 })();
 
-// ---- extracted script block 52 ----
+// ---- extracted script block 56 ----
 (function () {
 
 (function () { 
